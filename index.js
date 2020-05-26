@@ -118,7 +118,7 @@ function validate(getMapUrl){
     }
 
     if (! containsMapResolutionParam(getMapUrl)){
-        console.log("URL does not contain MAP_RESOLUTION query parameter. Required to determine scale of GetMap request.")
+        console.log("URL does not contain MAP_RESOLUTION query parameter. Required to determine scale of GetMap request. For example \"MAP_RESOLUTION=72\".")
         document.getElementById("error").innerHTML = "URL does not contain MAP_RESOLUTION query parameter. Required to determine scale of GetMap request."
         return false
     }
@@ -128,7 +128,6 @@ function validate(getMapUrl){
         document.getElementById("error").innerHTML = "GetMap request contains more than one layer, application can only validate GetMap requests with a single layer."
         return false
     }
-
     return true
 }
 
@@ -143,6 +142,7 @@ function urlChanged(){
     let getMapImageEl = document.getElementById("GetMapImage")
     let imageLoaderEl = document.getElementById("ImageLoader")
     getMapImageEl.src = ""
+    getMapImageEl.style.display = "block"
     let DPI = getDPIFromUrl(getMapUrl)
 
     getMapImageEl.addEventListener('load',loaded)

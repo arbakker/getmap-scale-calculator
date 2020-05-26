@@ -13,6 +13,7 @@ body{
     width:300px;
     height:300px;
     border:unset;
+    display:none;
 }
 
 #error{
@@ -22,6 +23,10 @@ body{
 input, textarea, #error {
     display: block;
     margin: 0.3em;
+}
+
+input, textarea{
+    padding:.5em;
 }
 
 #container>div{
