@@ -7,20 +7,28 @@
 </head>
 
 <body>
-    <div id="container">
-        <h1>GetMap Scale Calculator</h1>
-        <div>
-            <label for="GetMapUrl">GetMap URL</label>
-            <textarea type="text" id="GetMapUrl" name="GetMapUrl" placeholder="WMS GetMap URL"></textarea>
-            <div id="error"></div>
+    <div class="row">
+        <div class="column" >
+            <h1>GetMap Scale Calculator</h1>
+            <div>
+                <label for="GetMapUrl">GetMap URL</label>
+                <textarea type="text" id="GetMapUrl" name="GetMapUrl" placeholder="WMS GetMap URL"></textarea>
+                <div id="error"></div>
+                <button id="zoomto">zoom to bbox</button>
+            </div>
+            <div id="result">
+            </div>
+            <div id="resultImage">
+                <div id="ImageLoader"></div> 
+                <img id="GetMapImage"></img>
+            </div>
         </div>
-        <div id="result">
+        <div class="column" style="background-color: lightgray;">
+            <div id="map"></div>
         </div>
-        <div id="resultImage">
-            <div id="ImageLoader"></div> 
-            <img id="GetMapImage"></img>
-        </div>
+        
     </div>
+    
   <script src="./index.js"></script>
 </body>
 

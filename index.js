@@ -1,5 +1,144 @@
 import WMSCapabilities from 'ol/format/WMSCapabilities'
+import { Map, View } from 'ol'
+import WMTSSource from 'ol/source/WMTS'
+import WKT from 'ol/format/WKT'
+import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer'
+import {Vector as VectorSource} from 'ol/source';
+import WMTSTileGrid from 'ol/tilegrid/WMTS.js'
+import { register } from 'ol/proj/proj4.js'
+import { transform } from 'ol/proj'
+import ExtentInteraction from 'ol/interaction/Extent'
+import Translate from 'ol/interaction/Translate'
+import {Circle as Fill, Stroke, Style} from 'ol/style';
+import {defaults as defaultInteractions, Select} from 'ol/interaction'
+import proj4 from 'proj4'
+import Projection from 'ol/proj/Projection'
+import { getTopLeft } from 'ol/extent.js'
+import 'ol/ol.css'
 
+const vectorSource = new VectorSource({projection: 'EPSG:28992'})
+const vector = new VectorLayer({
+    title: 'vector',
+    style: vectorStyle,
+    source: vectorSource
+})
+
+// interaction
+var translateInteraction = new Translate(
+    {layers: [vector]}
+)
+
+translateInteraction.on("translateend", function(e){
+    const extent = e.features.getArray()[0].getGeometry().getExtent()
+    const bbox = extent.join(',')
+    updateBboxUrl(bbox)
+})
+
+// extentInteraction
+var extentInteraction = new ExtentInteraction()
+extentInteraction.setActive(false)
+translateInteraction.setActive(true)
+
+// add map
+const BRTA_ATTRIBUTION = 'Kaartgegevens: © <a href="http://www.cbs.nl">CBS</a>, <a href="http://www.kadaster.nl">Kadaster</a>, <a href="http://openstreetmap.org">OpenStreetMap</a><span class="printhide">-auteurs (<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>).</span>'
+proj4.defs('EPSG:28992', '+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +towgs84=565.417,50.3319,465.552,-0.398957,0.343988,-1.8774,4.0725 +units=m +no_defs')
+register(proj4)
+const rdProjection = new Projection({
+  code: 'EPSG:28992',
+  extent: [-285401.92, 22598.08, 595401.92, 903401.92]
+})
+
+const resolutions = [3440.640, 1720.320, 860.160, 430.080, 215.040, 107.520, 53.760, 26.880, 13.440, 6.720, 3.360, 1.680, 0.840, 0.420, 0.210]
+const matrixIds = new Array(15)
+for (var i = 0; i < 15; ++i) {
+  matrixIds[i] = i
+}
+
+function getWmtsLayer (layername) {
+  return new TileLayer({
+    type: 'base',
+    title: `${layername} WMTS`,
+    extent: rdProjection.extent,
+    source: new WMTSSource({
+      url: 'https://geodata.nationaalgeoregister.nl/tiles/service/wmts',
+      layer: layername,
+      matrixSet: 'EPSG:28992',
+      format: 'image/png',
+      attributions: BRTA_ATTRIBUTION,
+      projection: rdProjection,
+      tileGrid: new WMTSTileGrid({
+        origin: getTopLeft(rdProjection.getExtent()),
+        resolutions: resolutions,
+        matrixIds: matrixIds
+      }),
+      style: 'default'
+    })
+  })
+}
+const vectorStyle = new Style({
+    stroke: new Stroke({
+      color: 'blue',
+      width: 3
+    }),
+    fill: new Fill({
+      color: 'rgba(0, 0, 255, 0.1)'
+    })
+  })
+
+
+const brtGrijsWmtsLayer = getWmtsLayer('brtachtergrondkaartgrijs')
+
+const map = new Map({
+    //select, modify
+  interactions: defaultInteractions().extend([ translateInteraction, extentInteraction]),
+  layers: [
+    brtGrijsWmtsLayer, 
+    vector
+  ],
+  target: document.getElementById("map"),
+  view: new View({
+    center: transform([5.43, 52.18], "EPSG:4326", 'EPSG:28992'),
+    zoom: 8,
+    projection: 'EPSG:28992'
+  })
+})
+
+
+
+
+// app code
+function updateBboxUrl(bboxString){
+    let getMapUrl = getMapUrlEl.value
+    if (! validate(getMapUrl)){
+        return
+    }
+    let queryParams = getQueryParams(getMapUrl)
+    queryParams.BBOX = bboxString
+
+    let newGetMapUrl = rebuildGetMapUrl(getMapUrl, queryParams)
+    getMapUrlEl.value = newGetMapUrl
+    urlChanged()
+}
+
+
+function rebuildGetMapUrl(getMapUrl, queryParams) {
+    const urlObj = new URL(getMapUrl)
+    let newGetMapUrl = `${urlObj.protocol}//${urlObj.host}:${urlObj.port}${urlObj.pathname}?`
+    let queryString = ''
+    Object.keys(queryParams).forEach(function (key) {
+        if (key && queryParams[key] !== undefined) {
+            queryString += `&${key}=${queryParams[key]}`
+        }
+    })
+    newGetMapUrl += queryString
+    return newGetMapUrl
+}
+
+function getImageRatio(){
+    let getMapUrl = getMapUrlEl.value
+    let queryParams = getQueryParams(getMapUrl)
+    return queryParams.WIDTH/queryParams.HEIGHT
+}
 
 function calculateScale(queryParams, DPI){
     let widthMapPixels = queryParams["WIDTH"]
@@ -47,7 +186,6 @@ function isValidHttpUrl(urlString) {
 
 function isValidGetMapUrl(urlString){
     let queryParams = getQueryParams(urlString)
-    console.log(queryParams)
     if ("BBOX" in queryParams && queryParams.BBOX  && 
     "REQUEST" in queryParams && queryParams.REQUEST.toUpperCase() === "GETMAP" &&
     "SERVICE" in queryParams && queryParams.SERVICE.toUpperCase() === "WMS" &&
@@ -90,15 +228,6 @@ function getDPIFromUrl(urlString){
     return ""
 }
 
-function fillDPIField(urlString){
-    let dpiEl = document.getElementById("DPI")
-    let dpiFromURL = getDPIFromUrl(urlString)
-    if (! dpiFromURL){
-        dpiFromURL = "72"
-    }
-    dpiEl.value = dpiFromURL
-}
-
 function validate(getMapUrl){
     if (!getMapUrl){
         // do nothing if url empty
@@ -131,8 +260,69 @@ function validate(getMapUrl){
     return true
 }
 
+function zoomTo(){
+    let fts = vectorSource.getFeatures()
+    console.log(fts)
+    if (fts.length > 0){
+        map.getView().fit(fts[0].getGeometry(), {padding: [50,50,50,50]})
+    }
+}
+
+document.getElementById("zoomto").addEventListener("click", zoomTo)
+
+function updateBbox(queryParams){
+    if (extentInteraction){
+        map.removeInteraction(extentInteraction)
+    }
+    let bbox = queryParams.BBOX.split(",")
+    let wktString = `POLYGON((${bbox[0]} ${bbox[1]}, ${bbox[2]} ${bbox[1]}, ${bbox[2]} ${bbox[3]},${bbox[0]} ${bbox[3]},${bbox[0]} ${bbox[1]}))`
+    let format = new WKT({dataProjection: 'EPSG:28992'})
+    let feature = format.readFeature(wktString, { 
+        dataProjection: 'EPSG:28992',
+        featureProjection: 'EPSG:28992'})
+
+    vectorSource.clear()
+    vectorSource.addFeature(feature)
+    extentInteraction = new ExtentInteraction({
+        extent:  feature.getGeometry().getExtent()
+    })
+    extentInteraction.setActive(false);
+    window.addEventListener('keydown', function(event) {
+        if (event.keyCode == 16) {
+            extentInteraction.setActive(true);
+            
+        }
+      });
+    window.addEventListener('keyup', function(event) {
+    if (event.keyCode == 16) {
+        extentInteraction.setActive(false);
+        let extent =  extentInteraction.getExtent()
+        let ratio = getImageRatio()
+        let dX = extent[2]-extent[0]
+        let newDY = dX/ratio
+        let newMaxY = extent[1]+ newDY
+        let newExtent = [extent[0], extent[1], extent[2], newMaxY ]
+        let bbox = newExtent.join(",")
+        updateBboxUrl(bbox)
+    }
+    })
+    map.addInteraction(extentInteraction)
+   
+}
+
+function syncDPIParams(){
+    let getMapUrl = getMapUrlEl.value
+    let queryParams = getQueryParams(getMapUrl)
+    let dpi = queryParams.MAP_RESOLUTION
+    queryParams["DPI"] = dpi
+    queryParams["FORMAT_OPTIONS"] = `dpi:${dpi}`
+    let newGetMapUrl = rebuildGetMapUrl(getMapUrl, queryParams)
+    getMapUrlEl.value = newGetMapUrl
+}
+
 
 function urlChanged(){
+    syncDPIParams()
     let getMapUrl = getMapUrlEl.value
     if (! validate(getMapUrl)){
         return
@@ -154,7 +344,8 @@ function urlChanged(){
     let queryParams = getQueryParams(getMapUrl)
     let scales = calculateScale(queryParams, DPI)
     let resultEl = document.getElementById("result")
-    
+
+    updateBbox(queryParams)
 
     const capUrl = getCapabilitiesURL(getMapUrl)
     const parser = new WMSCapabilities()
@@ -164,7 +355,6 @@ function urlChanged(){
         var result = parser.read(text)
         let layers = []
         layers = unpackLayers(result.Capability, layers)
-    
         let maxScale
         let minScale
         layers.forEach(function (lyr) {
@@ -214,6 +404,7 @@ function unpackLayers(capObj, result){
   }
 
 
-let getMapUrlEl = document.getElementById("GetMapUrl")
-getMapUrlEl.addEventListener('input', urlChanged)
-window.onload = urlChanged 
+
+var getMapUrlEl = document.getElementById("GetMapUrl")
+getMapUrlEl.addEventListener('blur', urlChanged)
+window.onload = urlChanged

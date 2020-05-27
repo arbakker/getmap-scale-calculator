@@ -1,16 +1,13 @@
-body{
-    width:600px;
-    margin: auto;
-}
+
 
 #GetMapUrl{
-    width:600px;
+    width:90%;
     height: 100px;
     resize: none;
 }
 
 #GetMapImage{
-    max-width:600px;
+    max-width:95%;
     border:unset;
     display:none;
 }
@@ -27,6 +24,7 @@ input, textarea, #error {
 input, textarea{
     padding:.5em;
 }
+
 
 #container>div{
     margin: 0.3em;
@@ -51,3 +49,16 @@ display: none;
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  .row {
+    display: flex;
+    }
+    
+    .column {
+    flex: 50%;
+    }
+
+    #map {
+        height: 97vh;
+        width:100%;
+      }
