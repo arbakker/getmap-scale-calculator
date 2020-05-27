@@ -262,7 +262,6 @@ function validate(getMapUrl){
 
 function zoomTo(){
     let fts = vectorSource.getFeatures()
-    console.log(fts)
     if (fts.length > 0){
         map.getView().fit(fts[0].getGeometry(), {padding: [50,50,50,50]})
     }
@@ -322,6 +321,8 @@ function syncDPIParams(){
 
 
 function urlChanged(){
+    let resultEl = document.getElementById("result")
+    resultEl.innerHTML = ""
     syncDPIParams()
     let getMapUrl = getMapUrlEl.value
     if (! validate(getMapUrl)){
@@ -343,8 +344,7 @@ function urlChanged(){
     getMapImageEl.src = getMapUrl
     let queryParams = getQueryParams(getMapUrl)
     let scales = calculateScale(queryParams, DPI)
-    let resultEl = document.getElementById("result")
-
+    
     updateBbox(queryParams)
 
     const capUrl = getCapabilitiesURL(getMapUrl)
