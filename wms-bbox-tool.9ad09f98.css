@@ -1,0 +1,66 @@
+
+
+#GetMapUrl{
+    width:90%;
+    height: 100px;
+    resize: none;
+}
+
+#GetMapImage{
+    max-width:95%;
+    border:unset;
+    display:none;
+}
+
+#error{
+    color:red;
+}
+
+input, textarea, #error {
+    display: block;
+    margin: 0.3em;
+}
+
+input, textarea{
+    padding:.5em;
+}
+
+
+#container>div{
+    margin: 0.3em;
+}
+
+body {
+    font-family: Sans-Serif;
+  }
+
+
+#ImageLoader {
+border: 8px solid #f3f3f3; /* Light grey */
+border-top: 8px solid #3498db; /* Blue */
+border-radius: 50%;
+width: 16px;
+height: 16px;
+animation: spin 2s linear infinite;
+display: none;
+}
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .row {
+    display: flex;
+    }
+    
+    .column {
+    flex: 50%;
+    }
+
+    #map {
+        height: 97vh;
+        width:100%;
+      }
+
+/*# sourceMappingURL=/wms-bbox-tool.9ad09f98.css.map */
